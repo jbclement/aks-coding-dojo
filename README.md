@@ -1,62 +1,39 @@
-# aks-coding-dojo
 
-## Environment setup
+# client tools installation
 
-```shell
-RESOURCE_GROUP_NAME="aks-coding-dojo-rg"
-LOCATION="northeurope"
-AKS_NAME="aks-coding-dojo"
-AKS_ADMIN_GROUP="aks-coding-dojo-admins"
-CODING_DOJO_STUDENTS_GROUP="aks-coding-dojo-students"
+## install chocolatey
 
-az group create --name $RESOURCE_GROUP_NAME --location $LOCATION
+in Powershell admin
+https://chocolatey.org/install
 
-az ad group create --display-name $CODING_DOJO_STUDENTS_GROUP --mail-nickname $CODING_DOJO_STUDENTS_GROUP
+## install azure cli
 
-while read line; do    
-    USER_ID=$({ az ad user list --filter "mail eq '$line'" --query "[].id" -o tsv | tr -d '\r' | tr -d '\n'; } < /dev/null)
-    echo "add $USER_ID to group $CODING_DOJO_STUDENTS_GROUP"
-    { az ad group member add --group $CODING_DOJO_STUDENTS_GROUP --member-id $USER_ID ; } < /dev/null
-done < students.txt
+choco install azure-cli
 
-az ad group create --display-name $AKS_ADMIN_GROUP --mail-nickname $AKS_ADMIN_GROUP
+## install kubectl
 
-while read line; do
-    USER_ID=$({ az ad user list --filter "mail eq '$line'" --query "[].id" -o tsv | tr -d '\r' | tr -d '\n'; } < /dev/null)
-    echo "add $USER_ID to group $AKS_ADMIN_GROUP"
-    { az ad group member add --group $AKS_ADMIN_GROUP --member-id $USER_ID ; } < /dev/null
-done < admins.txt
+choco install kubernetes-cli
 
-AKS_ADMIN_GROUP_ID=$(az ad group show --group aks-admins --query "id" -o tsv | tr -d '\r' | tr -d '\n')
+## install helm
 
-az aks create -g $RESOURCE_GROUP_NAME -n $AKS_NAME \
---enable-aad \
---aad-admin-group-object-ids $AKS_ADMIN_GROUP_ID \
---enable-azure-rbac \
---node-count 1 \
---node-vm-size Standard_B2ms
-```
+choco install kubernetes-helm
 
-```shell
+## install k9s
 
-AKS_ID=$(az aks show -g $RESOURCE_GROUP_NAME -n $AKS_NAME --query id -o tsv | tr -d '\r' | tr -d '\n')
-CODING_DOJO_STUDENTS_GROUP_ID=$(az ad group show --group $CODING_DOJO_STUDENTS_GROUP --query "id" -o tsv | tr -d '\r' | tr -d '\n')
-az role assignment create --role "Azure Kubernetes Service Cluster User Role" --assignee $CODING_DOJO_STUDENTS_GROUP_ID  --scope $AKS_ID
-```
+choco install k9s
 
-```shell
-az aks get-credentials -n $AKS_NAME -g $RESOURCE_GROUP_NAME
-kubectl config set-context $AKS_NAME
-```
+# k8s for developers
 
+# use kubectl in imperative mode
 
-```shell
-while read line; do    
-    UPN=$({ az ad user list --filter "mail eq '$line'" --query "[].userPrincipalName" -o tsv | tr -d '\r' | tr -d '\n'; } < /dev/null)
-    NS=$(echo "$UPN" | awk -F"@" '{print $1}' | tr -d '#EXT#' | tr -d '.' | tr -d '_')
-    echo $NS
-    { kubectl create ns $NS ; } < /dev/null
-    USER_ID=$({ az ad user list --filter "mail eq '$line'" --query "[].id" -o tsv | tr -d '\r' | tr -d '\n'; } < /dev/null)
-    { az role assignment create --role "Azure Kubernetes Service RBAC Writer" --assignee $USER_ID --scope $AKS_ID/namespaces/$NS ; } < /dev/null
-done < students.txt    
-```
+# yaml step by step
+
+# yaml complex app
+
+https://github.com/Azure-Samples/aks-store-demo
+
+# helm
+
+https://learn.microsoft.com/en-us/azure/aks/quickstart-helm?tabs=azure-cli
+
+# k9s
