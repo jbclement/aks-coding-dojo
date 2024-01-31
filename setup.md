@@ -60,16 +60,17 @@ az aks create -g $RESOURCE_GROUP_NAME -n $AKS_NAME \
 --node-vm-size Standard_B2ms
 ```
 
--- Assign role "Azure Kubernetes Service Cluster User Role" to the students group on the AKS cluster created above
+-- Assign role "Azure Kubernetes Service Cluster User Role" and "Azure Kubernetes Service RBAC Reader" to the students group on the AKS cluster created above
 ```shell
 AKS_ID=$(az aks show -g $RESOURCE_GROUP_NAME -n $AKS_NAME --query id -o tsv | tr -d '\r' | tr -d '\n')
 CODING_DOJO_STUDENTS_GROUP_ID=$(az ad group show --group $CODING_DOJO_STUDENTS_GROUP --query "id" -o tsv | tr -d '\r' | tr -d '\n')
 az role assignment create --role "Azure Kubernetes Service Cluster User Role" --assignee $CODING_DOJO_STUDENTS_GROUP_ID  --scope $AKS_ID
+az role assignment create --role "Azure Kubernetes Service RBAC Reader" --assignee $CODING_DOJO_STUDENTS_GROUP_ID  --scope $AKS_ID
 ```
 
 -- Get kubeconfig file
 ```shell
-az aks get-credentials -n $AKS_NAME -g $RESOURCE_GROUP_NAME
+az aks get-credentials -n $AKS_NAME -g $RESOURCE_GROUP_NAME --overwrite-existing
 kubectl config set-context $AKS_NAME
 ```
 
@@ -77,7 +78,7 @@ kubectl config set-context $AKS_NAME
 ```shell
 while read line; do    
     UPN=$({ az ad user list --filter "mail eq '$line'" --query "[].userPrincipalName" -o tsv | tr -d '\r' | tr -d '\n'; } < /dev/null)
-    NS=$(echo "$UPN" | awk -F"@" '{print $1}' | tr -d '#EXT#' | tr -d '.' | tr -d '_')
+    NS=$(echo "$UPN" | awk -F"@" '{print $1}' | tr -d '#EXT#' | tr -d '.' | tr -d '_' | sed 's/avanadecom//')
     echo $NS
     { kubectl create ns $NS ; } < /dev/null
     USER_ID=$({ az ad user list --filter "mail eq '$line'" --query "[].id" -o tsv | tr -d '\r' | tr -d '\n'; } < /dev/null)
