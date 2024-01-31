@@ -40,20 +40,62 @@ Still in a Powershell admin console, execute:
 choco install -y azure-cli ; choco install -y kubernetes-cli ; choco install -y kubernetes-helm ; choco install -y k9s
 ```
 
+# AKS from Azure Portal
 
 
-# k8s for developers
 
-# use kubectl in imperative mode
+# Managing Kubernetes Objects Using Imperative Commands
 
-# yaml step by step
+Reference : https://kubernetes.io/docs/tasks/manage-kubernetes-objects/imperative-command/
 
-# yaml complex app
+- list all namespaces and identify yours
 
-https://github.com/Azure-Samples/aks-store-demo
+```shell
+kubectl get namespaces
+```
 
-# helm
+- list pods in your namespace
+```shell
+kubectl get pods -n <mynamespace>
+```
+
+- set your namespace as default in the current context
+```shell
+kubectl config set-context --current --namespace=<mynamespace>
+```
+
+create pod
+```shell
+kubectl run hello-pod --image=jbclementdocker/aks-coding-dojo:hello --port=80
+```
+
+create service
+
+kubectl expose pod hello-pod2 --name=mon-service --port=80 --target-port=80 --type=ClusterIP
+
+create ingress
+kubectl create ingress ingress3 --class=nginx   --rule="/aa*=mon-service:80"   --annotation="nginx.ingress.kubernetes.io/rewrite-target=/"
+
+describe commands
+
+logs commands
+
+delete commands
+
+# Deploy with yaml files
+
+https://learn.microsoft.com/en-us/azure/aks/app-routing?tabs=default%2Cdeploy-app-default
+https://learn.microsoft.com/en-us/azure/aks/ingress-basic?tabs=azure-cli
+
+
+# Deploy a multi-container app with yaml
+
+```shell
+kubectl apply -f ./yaml-contoso-store/app.yaml
+```
+
+# Deploy an app with Helm
 
 https://learn.microsoft.com/en-us/azure/aks/quickstart-helm?tabs=azure-cli
 
-# k9s
+

@@ -8,6 +8,7 @@
 RESOURCE_GROUP_NAME="aks-coding-dojo-rg"
 LOCATION="northeurope"
 AKS_NAME="aks-coding-dojo"
+ACR_NAME="acrakscodingdojo"
 AKS_ADMIN_GROUP="aks-coding-dojo-admins"
 CODING_DOJO_STUDENTS_GROUP="aks-coding-dojo-students"
 ```
@@ -50,6 +51,11 @@ done < admins.txt
 AKS_ADMIN_GROUP_ID=$(az ad group show --group $AKS_ADMIN_GROUP --query "id" -o tsv | tr -d '\r' | tr -d '\n')
 ```
 
+-- create Azure container registry
+```shell
+az acr create --resource-group $RESOURCE_GROUP_NAME --name $ACR_NAME --sku Basic
+```
+
 -- create the AKS cluster
 ```shell
 az aks create -g $RESOURCE_GROUP_NAME -n $AKS_NAME \
@@ -58,6 +64,7 @@ az aks create -g $RESOURCE_GROUP_NAME -n $AKS_NAME \
 --enable-azure-rbac \
 --node-count 1 \
 --node-vm-size Standard_B2ms
+--attach-acr $ACR_NAME
 ```
 
 -- Assign role "Azure Kubernetes Service Cluster User Role" and "Azure Kubernetes Service RBAC Reader" to the students group on the AKS cluster created above

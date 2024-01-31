@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-front
+  labels: 
+    app: nginx
+
+spec:
+  type: ClusterIP
+  selector:
+    app: nginx
+
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
