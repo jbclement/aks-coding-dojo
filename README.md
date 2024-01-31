@@ -37,10 +37,7 @@ in a Powershell admin console, follow the installation procedure: https://chocol
 
 Still in a Powershell admin console, execute:
 ```shell
-choco install -y azure-cli
-choco install -y kubernetes-cli
-choco install -y kubernetes-helm
-choco install -y k9s
+choco install -y azure-cli ; choco install -y kubernetes-cli ; choco install -y kubernetes-helm ; choco install -y k9s
 ```
 
 
