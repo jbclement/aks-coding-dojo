@@ -63,7 +63,7 @@ az aks create -g $RESOURCE_GROUP_NAME -n $AKS_NAME \
 --aad-admin-group-object-ids $AKS_ADMIN_GROUP_ID \
 --enable-azure-rbac \
 --node-count 1 \
---node-vm-size Standard_B2ms
+--node-vm-size Standard_B2ms \
 --attach-acr $ACR_NAME
 ```
 
