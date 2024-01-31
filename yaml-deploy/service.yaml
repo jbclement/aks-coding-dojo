@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: hello-front
+  name: hello-service
   labels: 
-    app: nginx
+    app: hello-svc
 
 spec:
   type: ClusterIP
   selector:
-    app: nginx
+    app: hello-app
 
   ports:
   - port: 80
