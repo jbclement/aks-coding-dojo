@@ -14,29 +14,36 @@
     ╚═════╝  ╚═════╝  ╚════╝  ╚═════╝                                              
                                                                                 
 
+# Objectives
+
+- get familiar with AKS environment
+- explore command line tools
+- deploy applications through yaml files
+- deploy applications through helm package
+- explore additional tools
                                                                                                                     
 # client tools installation
 
-## install chocolatey
+To follow this coding dojo, some tools are required.
+You can use either Powershell console, WSL or Azure cloud shell.
 
-in Powershell admin
-https://chocolatey.org/install
+To install tools using Powershell console, follow these steps:
 
-## install azure cli
+- install chocolatey
 
+in a Powershell admin console, follow the installation procedure: https://chocolatey.org/install
+
+- install azure cli
+
+Still in a Powershell admin console, execute:
+```shell
 choco install azure-cli
-
-## install kubectl
-
 choco install kubernetes-cli
-
-## install helm
-
 choco install kubernetes-helm
-
-## install k9s
-
 choco install k9s
+```
+
+
 
 # k8s for developers
 
