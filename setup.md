@@ -27,7 +27,7 @@ az ad group create --display-name $CODING_DOJO_STUDENTS_GROUP --mail-nickname $C
 ```shell
 while read line; do    
     USER_ID=$({ az ad user list --filter "mail eq '$line'" --query "[].id" -o tsv | tr -d '\r' | tr -d '\n'; } < /dev/null)
-    echo "add $USER_ID to group $CODING_DOJO_STUDENTS_GROUP"
+    echo "add $line to group $CODING_DOJO_STUDENTS_GROUP"
     { az ad group member add --group $CODING_DOJO_STUDENTS_GROUP --member-id $USER_ID ; } < /dev/null
 done < students.txt
 ```
@@ -41,7 +41,7 @@ az ad group create --display-name $AKS_ADMIN_GROUP --mail-nickname $AKS_ADMIN_GR
 ```shell
 while read line; do
     USER_ID=$({ az ad user list --filter "mail eq '$line'" --query "[].id" -o tsv | tr -d '\r' | tr -d '\n'; } < /dev/null)
-    echo "add $USER_ID to group $AKS_ADMIN_GROUP"
+    echo "add $line to group $AKS_ADMIN_GROUP"
     { az ad group member add --group $AKS_ADMIN_GROUP --member-id $USER_ID ; } < /dev/null
 done < admins.txt
 ```
@@ -85,7 +85,7 @@ kubectl config set-context $AKS_NAME
 ```shell
 while read line; do    
     UPN=$({ az ad user list --filter "mail eq '$line'" --query "[].userPrincipalName" -o tsv | tr -d '\r' | tr -d '\n'; } < /dev/null)
-    NS=$(echo "$UPN" | awk -F"@" '{print $1}' | tr -d '#EXT#' | tr -d '.' | tr -d '_' | sed 's/avanadecom//')
+    NS=$(echo "$UPN" | awk -F"@" '{print $1}' | tr -d '#EXT#' | tr -d '.' | tr -d '_' | tr '[:upper:]' '[:lower:]' | sed 's/avanadecom//' )
     echo $NS
     { kubectl create ns $NS ; } < /dev/null
     USER_ID=$({ az ad user list --filter "mail eq '$line'" --query "[].id" -o tsv | tr -d '\r' | tr -d '\n'; } < /dev/null)
