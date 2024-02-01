@@ -176,9 +176,7 @@ spec:
 
 ### Create ingress
 
-- create a ingress.yaml file with the following content
-
-** modify the <path> to use a unique value (not already used on the ingress controller) **
+- create a ingress.yaml file with the following content (**modify the <path> to use a unique value (not already used on the ingress controller)**)
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -458,15 +456,286 @@ kubectl delete --all services
 
 # Deploy an app with Helm
 
-https://learn.microsoft.com/en-us/azure/aks/quickstart-helm?tabs=azure-cli
+- Generate helm chart
+```shell
+helm create azure-vote-front
+```
+
+- Edit azure-vote-front/chart.yaml to add dependency for redis, and update appVersion to v1
+```yaml
+apiVersion: v2
+name: azure-vote-front
+description: A Helm chart for Kubernetes
+
+dependencies:
+  - name: redis
+    version: 17.3.17
+    repository: https://charts.bitnami.com/bitnami
+
+# A chart can be either an 'application' or a 'library' chart.
+#
+# Application charts are a collection of templates that can be packaged into versioned archives
+# to be deployed.
+#
+# Library charts provide useful utilities or functions for the chart developer. They're included as
+# a dependency of application charts to inject those utilities and functions into the rendering
+# pipeline. Library charts do not define any templates and therefore cannot be deployed.
+type: application
+
+# This is the chart version. This version number should be incremented each time you make changes
+# to the chart and its templates, including the app version.
+# Versions are expected to follow Semantic Versioning (https://semver.org/)
+version: 0.1.0
+
+# This is the version number of the application being deployed. This version number should be
+# incremented each time you make changes to the application. Versions are not expected to
+# follow Semantic Versioning. They should reflect the version the application is using.
+# It is recommended to use it with quotes.
+appVersion: "v1"
+```
+
+- update dependency
+```shell
+helm dependency update azure-vote-front
+```
+
+- Edit azure-vote-front/values.yaml with following changes:
+  - Add a redis section to set the image details, container port, and deployment name.
+  - Add a backendName for connecting the frontend portion to the redis deployment.
+  - Change image.repository to <loginServer>/azure-vote-front.
+  - Change image.tag to v1.
+  - Change service.type to LoadBalancer
+
+```yaml
+# Default values for azure-vote-front.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+backendName: azure-vote-backend-master
+redis:
+  image:
+    registry: mcr.microsoft.com
+    repository: oss/bitnami/redis
+    tag: 6.0.8
+  fullnameOverride: azure-vote-backend
+  auth:
+    enabled: false
+
+image:
+  repository: acrakscodingdojo.azurecr.io/azure-vote-front
+  pullPolicy: IfNotPresent
+  tag: "v1"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: LoadBalancer
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Additional volumes on the output Deployment definition.
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+```
+
+- Edit azure-vote-front/templates/deployment.yaml to add an env section to pass the name of the redis deployment
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "azure-vote-front.fullname" . }}
+  labels:
+    {{- include "azure-vote-front.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "azure-vote-front.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "azure-vote-front.labels" . | nindent 8 }}
+	{{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "azure-vote-front.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          - name: REDIS
+            value: {{ .Values.backendName }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+```
+
+- Install the helm chart
+```shell
+helm install azure-vote-front azure-vote-front/
+```
+
+- Get the public IP address of the load balancer
+```shell
+kubectl get service azure-vote-front
+```
+
+- Navigate to the application using the EXTERNAL-IP
+
+- view installed helm charts
+```shell
+helm ls
+```
+
+- uninstall helm chart
+```shell
+helm uninstall azure-vote-front
+```
 
 
 # References
 
 - Ingress controllers
+
 https://learn.microsoft.com/en-us/azure/aks/app-routing?tabs=default%2Cdeploy-app-default
 https://learn.microsoft.com/en-us/azure/aks/ingress-basic?tabs=azure-cli
 https://learn.microsoft.com/en-us/azure/application-gateway/ingress-controller-overview
 
+- Helm tutorial
+
+https://learn.microsoft.com/en-us/azure/aks/quickstart-helm?tabs=azure-cli
+
+- Multi-container app
+
+https://github.com/Azure-Samples/aks-store-demo
+
+- Deploying ASP.NET Core applications to Kubernetes
+
+https://andrewlock.net/series/deploying-asp-net-core-applications-to-kubernetes/
 
 
